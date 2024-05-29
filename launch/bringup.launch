@@ -18,27 +18,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <!-- Use this launch-file for starting the scanner driver exclusively. -->
 <launch>
   <!-- IP-Address of Safety laser scanner -->
-  <arg name="sensor_ip" default="192.168.0.10" />
+  <arg name="sensor_ip" default="10.3.1.25" />
 
   <!-- Name of the scanner (required to run multiple scanners) which by convention
        is the prefix for the urdf description. -->
   <arg name="tf_prefix" default="laser_1" />
 
   <!-- Start angle of measurement in radian -->
-  <arg name="angle_start" default="$(eval radians(-137.4))" />
+  <arg name="angle_start" default="$(eval radians(-70))" />
 
   <!-- End angle of measurement in radian -->
 
-  <arg name="angle_end" default="$(eval radians(137.4))" />
+  <arg name="angle_end" default="$(eval radians(70))" />
 
   <!-- Publishing of intensities -->
-  <arg name="intensities" default="false" />
+  <arg name="intensities" default="true" />
 
   <!-- Scan resolution in radian -->
-  <arg name="resolution" default="$(eval radians(0.1))" />
+  <arg name="resolution" default="$(eval radians(0.2))" />
 
   <!-- IP-Address of host machine -->
-  <arg name="host_ip" default="auto" />
+  <arg name="host_ip" default="10.3.1.24" />
 
   <!-- UDP Port on which monitoring frames (scans) should be received -->
   <arg name="host_udp_port_data" default="55115" />
