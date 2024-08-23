@@ -114,7 +114,7 @@ static const std::map<ErrorType, ErrorMessage> ERROR_CODE_TO_STRING
   { Et::out_of_range_err, "Out of range error." },
   { Et::temp_range_err, "Temperature out of range." },
   { Et::encoder_generic_err, "Encoder: Generic error." },
-  { Et::unused, "Unexpected error" } \
+  { Et::unused, "Unexpected error" } 
 };
 
 // clang-format off

@@ -14,6 +14,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "psen_scan_v2_standalone/scanner_v2.h"
+#include <ros/ros.h>
+#include <std_msgs/String.h>
 
 #include <cassert>
 #include <stdexcept>
@@ -23,6 +25,22 @@
 namespace psen_scan_v2_standalone
 {
 using namespace psen_scan_v2_standalone::protocol_layer::scanner_events;
+
+///////////////////////////// Initialize ROS publisher
+ros::Publisher diagnostic_pub;
+
+void initializeRosPublisher(ros::NodeHandle& nh)
+{
+  diagnostic_pub = nh.advertise<std_msgs::String>("scanner_diagnostics", 10);
+}
+
+// Function to initialize ROS Node
+void initializeRosNode(ros::NodeHandle& nh)
+{
+  initializeRosPublisher(nh);
+}
+
+/////////////////////////////////////////////////////
 
 // clang-format off
 #define BIND_EVENT(event_name)\
@@ -57,6 +75,10 @@ ScannerV2::ScannerV2(const ScannerConfiguration& scanner_config, const LaserScan
                                 BIND_EVENT(scanner_events::MonitoringFrameTimeout)))
 // LCOV_EXCL_STOP
 {
+  // Initialize ROS Node
+  ros::NodeHandle nh;
+  initializeRosNode(nh);
+
   const std::lock_guard<std::mutex> lock(member_mutex_);
   sm_->start();
 }
@@ -139,4 +161,20 @@ void ScannerV2::scannerStopErrorCallback(const std::string& error_msg)
   scanner_has_stopped_ = boost::none;
 }
 
+void ScannerProtocolDef::checkForDiagnosticErrors(const data_conversion_layer::monitoring_frame::Message& msg)
+{
+  if (msg.hasDiagnosticMessagesField() && !msg.diagnosticMessages().empty())
+  {
+    PSENSCAN_WARN_THROTTLE(
+        1 /* sec */, "StateMachine", "The scanner reports an error from scanner_v2: {}", util::formatRange(msg.diagnosticMessages()));
+
+    std::string formatted_diagnostics = util::formatRange(msg.diagnosticMessages());
+
+    std_msgs::String diagnostic_msg;
+    diagnostic_msg.data = formatted_diagnostics;
+    diagnostic_pub.publish(diagnostic_msg);
+
+    ROS_INFO("Diagnostic Message: %s", formatted_diagnostics.c_str());
+  }
+}
 }  // namespace psen_scan_v2_standalone

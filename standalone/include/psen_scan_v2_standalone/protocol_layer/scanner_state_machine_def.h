@@ -146,6 +146,8 @@ inline void ScannerProtocolDef::sendStartRequest(const T& event)
     auto host_ip{ control_client_.hostIp() };
     config_.hostIp(host_ip.to_ulong());
     PSENSCAN_INFO("StateMachine", "No host ip set! Using local ip: {}", host_ip.to_string());
+    PSENSCAN_INFO("StateMachine", "hello from extra", "");
+    // #include "psen_scan_v2_standalone/communication_layer/udp_client.h"
   }
   control_client_.write(
       data_conversion_layer::start_request::serialize(data_conversion_layer::start_request::Message(config_)));
@@ -156,7 +158,7 @@ inline void ScannerProtocolDef::handleStartRequestTimeout(const scanner_events::
   PSENSCAN_DEBUG("StateMachine", "Action: handleStartRequestTimeout");
   PSENSCAN_ERROR("StateMachine",
                  "Timeout while waiting for the scanner to start! Retrying... "
-                 "(Please check the ethernet connection or contact PILZ support if the error persists.)");
+                 "I am error (Please check the ethernet connection or contact PILZ support if the error persists.)");
   sendStartRequest(event);
 }
 
@@ -225,14 +227,14 @@ inline void ScannerProtocolDef::notifyUserAboutRefusedStopReply(scanner_events::
   stop_error_callback_("Stop Request refused by device.");
 }
 
-inline void ScannerProtocolDef::checkForDiagnosticErrors(const data_conversion_layer::monitoring_frame::Message& msg)
-{
-  if (msg.hasDiagnosticMessagesField() && !msg.diagnosticMessages().empty())
-  {
-    PSENSCAN_WARN_THROTTLE(
-        1 /* sec */, "StateMachine", "The scanner reports an error: {}", util::formatRange(msg.diagnosticMessages()));
-  }
-}
+//  inline void ScannerProtocolDef::checkForDiagnosticErrors(const data_conversion_layer::monitoring_frame::Message& msg)
+//  {
+//    if (msg.hasDiagnosticMessagesField() && !msg.diagnosticMessages().empty())
+//    {
+//      PSENSCAN_WARN_THROTTLE(
+//          1 /* sec */, "StateMachine", "The scanner reports an error: {}", util::formatRange(msg.diagnosticMessages()));
+//    }
+//  }
 
 inline void
 ScannerProtocolDef::checkForChangedActiveZoneset(const data_conversion_layer::monitoring_frame::Message& msg)
@@ -303,7 +305,7 @@ inline void ScannerProtocolDef::handleMonitoringFrameTimeout(const scanner_event
 
   PSENSCAN_WARN("StateMachine",
                 "Timeout while waiting for MonitoringFrame message."
-                " (Please check the ethernet connection or contact PILZ support if the error persists.)");
+                " I am warning (Please check the ethernet connection or contact PILZ support if the error persists.)");
 }
 
 //+++++++++++++++++++++++++++++++++ Guards ++++++++++++++++++++++++++++++++++++
