@@ -31,6 +31,10 @@
 #include "psen_scan_v2_standalone/io_state.h"
 #include "psen_scan_v2_standalone/util/logging.h"
 
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <std_msgs/UInt64.h>
+
 namespace psen_scan_v2_standalone
 {
 namespace data_conversion_layer
@@ -44,7 +48,7 @@ ros::Publisher diagnostic_pub;
 
 void initializeRosPublisher(ros::NodeHandle& nh)
 {
-  diagnostic_pub = nh.advertise<std_msgs::String>("diagnostics_bits", 10);
+  diagnostic_pub = nh.advertise<std_msgs::UInt64>("diagnostics_bits", 10);
 }
 
 // Function to initialize ROS Node
@@ -75,16 +79,6 @@ FixedFields::FixedFields(DeviceStatus device_status,
   , from_theta_(from_theta)
   , resolution_(resolution)
 {
-}
-
-void initializeScanner()
-{
-  // Initialize ROS Node
-  ros::NodeHandle nhand;
-  initializeRosNode(nhand);
-
-  const std::lock_guard<std::mutex> lock(member_mutex_);
-  sm_->start();
 }
 
 static constexpr double toMeter(const uint16_t& value)
@@ -176,7 +170,7 @@ monitoring_frame::Message deserialize(const data_conversion_layer::RawData& data
         const size_t num_measurements{ static_cast<size_t>(additional_header.length()) /
                                        NUMBER_OF_BYTES_SINGLE_MEASUREMENT };
         std::vector<double> intensities;
-        raw_processing::readArray<uint16_t, double>(ss, intensities, num_measurements, std::bind(toIntensities, _1));
+        raw_processing::readArray<uint16_t, double>(ss, intensities, num_measurements, std::bind(toIntensities, std::placeholders::_1));
         msg_builder.intensities(intensities);
         break;
       }
@@ -273,12 +267,10 @@ std::vector<diagnostic::Message> deserializeMessages(std::istream& is)
     std::string binary_string = bitset_bit_accu.to_string();
 
     PSENSCAN_ERROR_THROTTLE(
-    1, "Diagnostic Message ", result);
-    PSENSCAN_ERROR_THROTTLE(
     1, "Bit Accumulator (64-bit) ", binary_string);
 
-    std_msgs::String diagnostic_msg;
-    diagnostic_msg.data = binary_string;
+    std_msgs::UInt64 diagnostic_msg;
+    diagnostic_msg.data = bit_accumulator;
     diagnostic_pub.publish(diagnostic_msg);
 
     return diagnostic_messages;
