@@ -31,6 +31,10 @@
 #include "psen_scan_v2_standalone/io_state.h"
 #include "psen_scan_v2_standalone/util/logging.h"
 
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <std_msgs/UInt64.h>
+
 namespace psen_scan_v2_standalone
 {
 namespace data_conversion_layer
@@ -38,6 +42,23 @@ namespace data_conversion_layer
 namespace monitoring_frame
 {
 using namespace std::placeholders;
+
+// Initialize ROS publisher globally
+ros::Publisher diagnostic_pub;
+
+void initializeRosPublisher(ros::NodeHandle& nh)
+{
+  diagnostic_pub = nh.advertise<std_msgs::UInt64>("diagnostics_bits", 10);
+}
+
+// Function to initialize ROS Node
+void initializeRosNode(ros::NodeHandle& nh)
+{
+  // Initialize publisher
+  initializeRosPublisher(nh);
+}
+
+//////////////////////////////////////
 
 AdditionalFieldHeader::AdditionalFieldHeader(Id id, Length length) : id_(id), length_(length)
 {
@@ -149,7 +170,7 @@ monitoring_frame::Message deserialize(const data_conversion_layer::RawData& data
         const size_t num_measurements{ static_cast<size_t>(additional_header.length()) /
                                        NUMBER_OF_BYTES_SINGLE_MEASUREMENT };
         std::vector<double> intensities;
-        raw_processing::readArray<uint16_t, double>(ss, intensities, num_measurements, std::bind(toIntensities, _1));
+        raw_processing::readArray<uint16_t, double>(ss, intensities, num_measurements, std::bind(toIntensities, std::placeholders::_1));
         msg_builder.intensities(intensities);
         break;
       }
@@ -203,29 +224,56 @@ namespace diagnostic
 {
 std::vector<diagnostic::Message> deserializeMessages(std::istream& is)
 {
-  std::vector<diagnostic::Message> diagnostic_messages;
+    std::vector<diagnostic::Message> diagnostic_messages;
 
-  // Read-in unused data fields
-  raw_processing::read<std::array<uint8_t, diagnostic::RAW_CHUNK_UNUSED_OFFSET_IN_BYTES>>(is);
+    // Read-in unused data fields
+    raw_processing::read<std::array<uint8_t, diagnostic::RAW_CHUNK_UNUSED_OFFSET_IN_BYTES>>(is);
 
-  for (const auto& scanner_id : configuration::VALID_SCANNER_IDS)
-  {
-    for (size_t byte_n = 0; byte_n < diagnostic::RAW_CHUNK_LENGTH_FOR_ONE_DEVICE_IN_BYTES; byte_n++)
+    // Initialize ROS NodeHandle
+    ros::NodeHandle nh;
+    initializeRosNode(nh);
+
+    // Variable to accumulate bits in a 64-bit number
+    uint64_t bit_accumulator = 0;
+    size_t bit_position = 0;
+
+    for (const auto& scanner_id : configuration::VALID_SCANNER_IDS)
     {
-      const auto raw_byte = raw_processing::read<uint8_t>(is);
-      const std::bitset<8> raw_bits(raw_byte);
-
-      for (size_t bit_n = 0; bit_n < raw_bits.size(); ++bit_n)
+      for (size_t byte_n = 0; byte_n < diagnostic::RAW_CHUNK_LENGTH_FOR_ONE_DEVICE_IN_BYTES; byte_n++)
       {
-        if (raw_bits.test(bit_n) && (diagnostic::ErrorType::unused != diagnostic::ERROR_BITS[byte_n][bit_n]))
+        const auto raw_byte = raw_processing::read<uint8_t>(is);
+        const std::bitset<8> raw_bits(raw_byte);
+
+        for (size_t bit_n = 0; bit_n < raw_bits.size(); ++bit_n)
         {
-          diagnostic_messages.push_back(diagnostic::Message(static_cast<configuration::ScannerId>(scanner_id),
-                                                            diagnostic::ErrorLocation(byte_n, bit_n)));
+          if (raw_bits.test(bit_n) && (diagnostic::ErrorType::unused != diagnostic::ERROR_BITS[byte_n][bit_n]))
+          {
+            diagnostic_messages.push_back(diagnostic::Message(static_cast<configuration::ScannerId>(scanner_id),
+                                                              diagnostic::ErrorLocation(byte_n, bit_n)));
+                                                              
+            // Store the bit in the 64-bit accumulator
+            bit_accumulator |= (1ULL << bit_position);
+          }
+          bit_position++;
+          if (bit_position >= 64)  // Only store up to 64 bits
+          {
+              bit_position = 0;  // Reset bit position for the next byte
+          }
         }
       }
     }
-  }
-  return diagnostic_messages;
+
+    std::bitset<64> bitset_bit_accu(bit_accumulator);
+    std::string binary_string = bitset_bit_accu.to_string();
+
+    PSENSCAN_ERROR_THROTTLE(
+    1, "Bit Accumulator (64-bit) ", binary_string);
+
+    std_msgs::UInt64 diagnostic_msg;
+    diagnostic_msg.data = bit_accumulator;
+    diagnostic_pub.publish(diagnostic_msg);
+
+    return diagnostic_messages;
 }
 }  // namespace diagnostic
 

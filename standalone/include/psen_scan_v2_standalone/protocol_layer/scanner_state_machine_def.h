@@ -225,14 +225,14 @@ inline void ScannerProtocolDef::notifyUserAboutRefusedStopReply(scanner_events::
   stop_error_callback_("Stop Request refused by device.");
 }
 
-inline void ScannerProtocolDef::checkForDiagnosticErrors(const data_conversion_layer::monitoring_frame::Message& msg)
-{
-  if (msg.hasDiagnosticMessagesField() && !msg.diagnosticMessages().empty())
-  {
-    PSENSCAN_WARN_THROTTLE(
-        1 /* sec */, "StateMachine", "The scanner reports an error: {}", util::formatRange(msg.diagnosticMessages()));
-  }
-}
+//  inline void ScannerProtocolDef::checkForDiagnosticErrors(const data_conversion_layer::monitoring_frame::Message& msg)
+//  {
+//    if (msg.hasDiagnosticMessagesField() && !msg.diagnosticMessages().empty())
+//    {
+//      PSENSCAN_WARN_THROTTLE(
+//          1 /* sec */, "StateMachine", "The scanner reports an error: {}", util::formatRange(msg.diagnosticMessages()));
+//    }
+//  }
 
 inline void
 ScannerProtocolDef::checkForChangedActiveZoneset(const data_conversion_layer::monitoring_frame::Message& msg)
