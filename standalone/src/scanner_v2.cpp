@@ -173,8 +173,6 @@ void ScannerProtocolDef::checkForDiagnosticErrors(const data_conversion_layer::m
     std_msgs::String diagnostic_msg;
     diagnostic_msg.data = formatted_diagnostics;
     diagnostic_pub.publish(diagnostic_msg);
-
-    ROS_INFO("Diagnostic Message: %s", formatted_diagnostics.c_str());
   }
 }
 }  // namespace psen_scan_v2_standalone
