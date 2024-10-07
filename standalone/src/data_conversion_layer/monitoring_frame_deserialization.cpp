@@ -48,7 +48,7 @@ ros::Publisher diagnostic_pub;
 
 void initializeRosPublisher(ros::NodeHandle& nh)
 {
-  diagnostic_pub = nh.advertise<std_msgs::UInt64>("diagnostics_bits", 10);
+  diagnostic_pub = nh.advertise<std_msgs::UInt64>("diagnostics_bits", 1);
 }
 
 // Function to initialize ROS Node
