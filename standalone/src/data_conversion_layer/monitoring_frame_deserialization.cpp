@@ -266,9 +266,18 @@ std::vector<diagnostic::Message> deserializeMessages(std::istream& is)
     std::bitset<64> bitset_bit_accu(bit_accumulator);
     std::string binary_string = bitset_bit_accu.to_string();
 
-    std_msgs::UInt64 diagnostic_msg;
-    diagnostic_msg.data = bit_accumulator;
-    diagnostic_pub.publish(diagnostic_msg);
+    // deserializeMessages is observed to be publishing at every 5ms 
+    // lidar raw data is published at every 33ms unaware about 5ms frequency 
+    // hence changing frequency could lead to a different frequency of data publishing.
+    static int call_count = 0;  
+    call_count++;
+    if (call_count >= 20)
+    {
+        std_msgs::UInt64 diagnostic_msg;
+        diagnostic_msg.data = bit_accumulator;
+        diagnostic_pub.publish(diagnostic_msg);
+        call_count = 0;
+    }
 
     return diagnostic_messages;
 }
