@@ -20,6 +20,8 @@
 #include <console_bridge/console.h>
 #include <sstream>
 
+#include "time_util.h"
+
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
@@ -40,18 +42,29 @@
     }                                                                                                                  \
   } while (false)
 
-#define PSENSCAN_LOG_THROTTLE(period, name, file, line, level, ...)                                                    \
-  PSENSCAN_LOG_THROTTLE_INTERNAL(std::chrono::system_clock::now(), period, name, file, line, level, __VA_ARGS__)
 
-#define PSENSCAN_LOG_THROTTLE_INTERNAL(now, period, name, file, line, level, ...)                                      \
+// Function to get human-readable formatted time
+//std::string getFormattedTime() {
+//    auto now = std::chrono::system_clock::now();
+//    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+//    std::tm now_tm = *std::localtime(&now_c);
+//    std::ostringstream oss;
+//    oss << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");  // Change the format as needed
+//    return oss.str();
+//}
+
+#define PSENSCAN_LOG_THROTTLE(period, name, file, line, level, ...)                                                    \
+  PSENSCAN_LOG_THROTTLE_INTERNAL(getFormattedTime(), period, name, file, line, level, __VA_ARGS__)
+
+#define PSENSCAN_LOG_THROTTLE_INTERNAL(formatted_time, period, name, file, line, level, ...)                          \
   do                                                                                                                   \
   {                                                                                                                    \
     static std::chrono::system_clock::time_point throttle_last_hit;                                                    \
-    auto throttle_now = now;                                                                                           \
+    auto throttle_now = std::chrono::system_clock::now();                                                              \
     if (throttle_last_hit + std::chrono::duration<double>(period) < throttle_now)                                      \
     {                                                                                                                  \
       throttle_last_hit = throttle_now;                                                                                \
-      PSENSCAN_LOG(name, file, line, level, __VA_ARGS__);                                                              \
+      PSENSCAN_LOG(name, file, line, level, "{}: {}", formatted_time, fmt::format(__VA_ARGS__));                       \
     }                                                                                                                  \
   } while (false)  // https://stackoverflow.com/questions/1067226/c-multi-line-macro-do-while0-vs-scope-block
 
