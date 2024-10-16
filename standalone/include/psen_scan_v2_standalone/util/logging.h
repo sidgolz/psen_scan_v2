@@ -53,7 +53,7 @@
     if (throttle_last_hit + std::chrono::duration<double>(period) < throttle_now)                                      \
     {                                                                                                                  \
       throttle_last_hit = throttle_now;                                                                                \
-      PSENSCAN_LOG(name, file, line, level, "{}: {}", formatted_time, fmt::format(__VA_ARGS__));                       \
+      PSENSCAN_LOG(name, file, line, level, "[{}]: {}", formatted_time, fmt::format(__VA_ARGS__));                       \
     }                                                                                                                  \
   } while (false)  // https://stackoverflow.com/questions/1067226/c-multi-line-macro-do-while0-vs-scope-block
 
