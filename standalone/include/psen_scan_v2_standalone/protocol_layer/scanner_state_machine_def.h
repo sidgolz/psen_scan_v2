@@ -16,6 +16,11 @@
 #include "psen_scan_v2_standalone/data_conversion_layer/start_request_serialization.h"
 #include "psen_scan_v2_standalone/scanner_configuration.h"
 #include "psen_scan_v2_standalone/communication_layer/udp_client.h"
+#include <chrono>
+
+#define LIDAR_DISCONNECT_DEBOUNCE_TIME        2 /* in sec */
+#define PSEN_SELF_DESTRUCT_WAIT_COUNT         10 /* counts but the func is per sec, so in a way its seconds */
+
 namespace psen_scan_v2_standalone
 {
 namespace protocol_layer
@@ -299,12 +304,51 @@ inline bool ScannerProtocolDef::framesContainMeasurements(
 
 inline void ScannerProtocolDef::handleMonitoringFrameTimeout(const scanner_events::MonitoringFrameTimeout& event)
 {
+  // Static variables to track the call count and last time the function was called
+  static int timeout_call_count = 0;
+  static auto last_call_time = std::chrono::steady_clock::now(); // Initialize with current time
+
+  // Get the current time
+  auto current_time = std::chrono::steady_clock::now();
+
+  // Calculate the time difference since the last call
+  auto time_diff = std::chrono::duration_cast<std::chrono::seconds>(current_time - last_call_time).count();
+
+  // Reset the call count if more than 2 seconds have passed since the last call
+  if (time_diff > LIDAR_DISCONNECT_DEBOUNCE_TIME)
+  {
+    PSENSCAN_INFO("StateMachine", "More than " + std::to_string(time_diff) + " seconds since the last timeout event. Resetting call count.");
+    timeout_call_count = 0;
+  }
+
+  // Update the last call time to the current time
+  last_call_time = current_time;
+
   PSENSCAN_DEBUG("StateMachine", "Action: handleMonitoringFrameTimeout");
 
-  PSENSCAN_WARN("StateMachine",
-                "Timeout while waiting for MonitoringFrame message."
-                " (Please check the ethernet connection or contact PILZ support if the error persists.)");
+  // Increment the count every time the function is called
+  timeout_call_count++;
+
+  // Check if the function has been called 10 times within 2 seconds intervals
+  if (timeout_call_count >= PSEN_SELF_DESTRUCT_WAIT_COUNT)
+  {
+    PSENSCAN_ERROR("StateMachine", "Self-destruct initiated after" + std::to_string(timeout_call_count) + "MonitoringFrameTimeout events.");
+
+    // Simulate self-destruction (you can replace this with whatever behavior is needed)
+    // std::terminate();  // This will cause the program to terminate abruptly.
+    // Alternatively:
+    throw std::runtime_error("Self-destruct after 10 timeouts");
+  }
+  else
+  {
+    PSENSCAN_WARN("StateMachine",
+                  "Timeout while waiting for MonitoringFrame message."
+                  " (Please check the ethernet connection or contact PILZ support if the error persists.)");
+
+    PSENSCAN_INFO("StateMachine", "Current timeout call count: " + std::to_string(timeout_call_count));
+  }
 }
+
 
 //+++++++++++++++++++++++++++++++++ Guards ++++++++++++++++++++++++++++++++++++
 
