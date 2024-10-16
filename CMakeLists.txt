@@ -135,6 +135,7 @@ include_directories(
 
 set(${PROJECT_NAME}_standalone_sources
   standalone/src/scanner_v2.cpp
+  standalone/src/time_util.cpp
   standalone/src/io_state.cpp
   standalone/src/laserscan.cpp
   standalone/src/data_conversion_layer/monitoring_frame_msg.cpp

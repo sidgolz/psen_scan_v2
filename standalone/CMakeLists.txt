@@ -56,6 +56,7 @@ include_directories(
 
 set(${PROJECT_NAME}_sources
   src/scanner_v2.cpp
+  src/time_util.cpp
   src/io_state.cpp
   src/laserscan.cpp
   src/data_conversion_layer/monitoring_frame_msg.cpp
