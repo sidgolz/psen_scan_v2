@@ -28,8 +28,8 @@
 #define PSENSCAN_LOG(name, file, line, level, ...)                                                                     \
   do                                                                                                                   \
   {                                                                                                                    \
-    console_bridge::log(file, line, level, fmt::format("{}: {}", name, fmt::format(__VA_ARGS__)).c_str());             \
-  } while (false)  // https://stackoverflow.com/questions/1067226/c-multi-line-macro-do-while0-vs-scope-block
+    console_bridge::log(file, line, level, fmt::format("[{}] {}: {}", getFormattedTime(), name, fmt::format(__VA_ARGS__)).c_str()); \
+  } while (false)
 
 #define PSENSCAN_LOG_ONCE(name, file, line, level, ...)                                                                \
   do                                                                                                                   \
@@ -37,7 +37,7 @@
     static bool already_logged = false;                                                                                \
     if (!already_logged)                                                                                               \
     {                                                                                                                  \
-      console_bridge::log(file, line, level, fmt::format("{}: {}", name, fmt::format(__VA_ARGS__)).c_str());           \
+    console_bridge::log(file, line, level, fmt::format("[{}] {}: {}", getFormattedTime(), name, fmt::format(__VA_ARGS__)).c_str()); \
       already_logged = true;                                                                                           \
     }                                                                                                                  \
   } while (false)
