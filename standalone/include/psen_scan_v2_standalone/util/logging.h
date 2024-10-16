@@ -42,17 +42,6 @@
     }                                                                                                                  \
   } while (false)
 
-
-// Function to get human-readable formatted time
-//std::string getFormattedTime() {
-//    auto now = std::chrono::system_clock::now();
-//    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-//    std::tm now_tm = *std::localtime(&now_c);
-//    std::ostringstream oss;
-//    oss << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");  // Change the format as needed
-//    return oss.str();
-//}
-
 #define PSENSCAN_LOG_THROTTLE(period, name, file, line, level, ...)                                                    \
   PSENSCAN_LOG_THROTTLE_INTERNAL(getFormattedTime(), period, name, file, line, level, __VA_ARGS__)
 
